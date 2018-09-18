@@ -10,4 +10,13 @@ const noteSchema = new mongoose.Schema({
 // Add 'createdAt' and 'updatedAt' fields
 noteSchema.set('timestamps', true);
 
+//expose virtuals and remove _id and __v
+noteSchema.set('toObject', {
+  virtuals: true,
+  transform: (doc, results) => {
+    delete results._id; // delete '_id'
+    delete results.__v;
+  }
+});
+
 module.exports = mongoose.model('Note', noteSchema);
