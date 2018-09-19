@@ -1,4 +1,11 @@
 language: node_js
 node_js: node
 services:
-  - mongodb
+- mongodb
+deploy:
+  provider: heroku
+  api_key:
+    secure: FQY0J06JrKT+73BC6qKn9YLrQQbu14132JOJntyv2yJoGXAhw3T0/uROMJ2mowGunQaui5ZNPW9fufnziNKFHt4jxgyqLFtctuwStOy9MJnwyeUzWSrtVrMPFhi5rG7cZiTkWrb8RbhPC0kC4UKLYdj3eyFi5JgKCOqKkMmmzZTa5YFp6oV39AI1blX2ZJsfgLNvm5CtfD+XLplS349lWEALofPX9ENdAgXQnYD8ogc99PCLISVK7DosZMebxlc7H+/48JVBbM02qps7AoBWdUFDPAzTV4ReQFlJlVY9B48osT4m+u5kzw9fCJ3v7o1dZmCSx2DSDKATOLNdTo0+OcVs9kEKpITCJVYQo3RGwvLePZP3ThxjVK2B0LRqpaFBNVIXfVkNTVroTXac/6vqZrfUO1KejY6IfpEwu226WQMAZVWWjBf5jqRGNAXo3uo2u6rRdXzLH56OuxO28s+1FvdzsH1YHYqXaYQ7ztMy2ykwQ8Nt62RtG8uVid878S5NH4s3myIS9S662rd73cTP7CcLA+5u1MLARGBe+RhiWM+2clHwdw85qzB+jBV5ZtbLoJ10glgOTPoFUHLresYjdRug3rfAXUJBwh3ne2UDlSLp8/nGHq0PTohioSUBivLi3cIRyEjm3GVVeXHXJ5MVDIW1KQFoDuuXSwddcqw7k2Q=
+  app: immense-hollows-30096
+  on:
+    repo: thinkful-ei24/Chelsea-noteful-v3
