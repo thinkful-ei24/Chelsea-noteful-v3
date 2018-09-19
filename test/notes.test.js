@@ -18,35 +18,35 @@ chai.use(chaiHttp);
 
 // API tests
 
-describe('Notes API resource', function() {
+describe('Notes API resource', function () {
   //
-  before(function() {
+  before(function () {
     return mongoose
       .connect(TEST_MONGODB_URI)
       .then(() => mongoose.connection.db.dropDatabase());
   });
 
-  beforeEach(function() {
+  beforeEach(function () {
     console.log('resetting test DB notes');
     return Note.insertMany(notes);
   });
 
-  afterEach(function() {
+  afterEach(function () {
     console.log('dropping DB');
     return mongoose.connection.db.dropDatabase();
   });
 
-  after(function() {
+  after(function () {
     return mongoose.disconnect();
   });
 
-  describe('GET endpoints', function() {
-    describe('GET all - api/notes', function() {
+  describe('GET endpoints', function () {
+    describe('GET all - api/notes', function () {
       //EXAMPLE OF: Parallel Request - Call both DB and API, then compare
-      it('should return all notes', function() {
+      it('should return all notes', function () {
         return (
           Promise.all([Note.find(), chai.request(app).get('/api/notes')])
-            // 3) then compare database results to API response
+            // 3. then compare database results to API response
             .then(([data, res]) => {
               expect(res).to.have.status(200);
               expect(res).to.be.json;
@@ -57,7 +57,7 @@ describe('Notes API resource', function() {
       });
 
       //EXAMPLE OF: Serial Request - Call API then call DB then compare
-      it('should return notes with right fields', function() {
+      it('should return notes with right fields', function () {
         //setting up empty variable resNote to hold results in this scope
         let resNote;
         //1. First, call the API
@@ -92,9 +92,9 @@ describe('Notes API resource', function() {
       });
     });
 
-    describe('GET by id - api/notes/:id', function() {
+    describe('GET by id - api/notes/:id', function () {
       //EXAMPLE OF: Serial Request - Call DB then call API then compare
-      it('should return correct note', function() {
+      it('should return correct note', function () {
         //setting up empty variable data to hold results in this scope
         let data;
         //1. First, call the database
@@ -126,9 +126,9 @@ describe('Notes API resource', function() {
       });
     });
   });
-  describe('POST endpoints', function() {
+  describe('POST endpoints', function () {
     //EXAMPLE OF: Serial Request - Call API then call DB then compare
-    it('should create and return a new item when provided valid data', function() {
+    it('should create and return a new item when provided valid data', function () {
       //set up new note to test post with
       const newNote = {
         title: 'The best article about cats ever!',
@@ -171,16 +171,60 @@ describe('Notes API resource', function() {
       );
     });
   });
-  describe('PUT endpoints', function() {
+  describe('PUT endpoints', function () {
     //EXAMPLE OF: Serial Request - Call DB then call API then compare
-    it('should updated fields sent over', function() {
-      //setting up empty variable data to hold results in this scope
+    it('should updated fields sent over', function () {
+      //setting up test data to update with
+      const updateData = {
+        title: 'My new note is so awesome',
+        content:
+          'This is some content for my new awesome note. Incredible right?'
+      };
       //1. First, call the database
-      //2. Then call the API with the ID
-      //3. Then compare database results to API response
+      return Note.findOne()
+        .then(note => {
+          //push the DB note id up into my updateData id
+          updateData.id = note.id;
+
+          return chai
+            .request(app)
+            .put(`/api/notes/${note.id}`)
+            .send(updateData);
+        })
+        .then(res => {
+          expect(res).to.have.status(200);
+          //2. Then call the API with the ID
+          return Note.findById(updateData.id);
+        })
+        //3. Then compare database results to API response
+        .then(note => {
+          expect(note.title).to.equal(updateData.title);
+          expect(note.content).to.equal(updateData.content);
+        });
+
     });
   });
-  describe('DELETE endpoints', function() {
-    it('should delete a note by id', function() {});
+  describe('DELETE endpoints', function () {
+    it('should delete a note by id', function () {
+      //create empty variable note to store our result in this scope
+      let note;
+
+      //find a note and pass it into response
+      return Note.findOne()
+        .then(foundNote => {
+          //set note variable to note object in response
+          note = foundNote;
+          return chai.request(app)
+            .delete(`/api/notes/${note.id}`);
+        })
+        .then(response => {
+          expect(response).to.have.status(204);
+          return Note.findById(note.id);
+        })
+        //look in DB and make sure the passed in note is gone.
+        .then(response => {
+          expect(response).to.be.null;
+        });
+    });
   });
 });
