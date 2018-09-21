@@ -7,12 +7,17 @@ const router = express.Router();
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
+  const { folderId } = req.query;
   const searchTerm = req.query.searchTerm;
   let filter = {};
   let re = new RegExp(searchTerm, 'gi');
 
   if (searchTerm) {
     filter = { $or: [{ title: re }, { content: re }] };
+  }
+
+  if (folderId) {
+    filter = { folderId: folderId };
   }
 
   Note.find(filter)
@@ -56,11 +61,19 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const { title, content } = req.body;
+  const { title, content, folderId } = req.body;
+
+  // has valid folderId
+  if (!mongoose.Types.ObjectId.isValid(folderId)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
 
   Note.create({
     title: title,
-    content: content
+    content: content,
+    folderId: folderId
   })
     .then(results => {
       if (results) {
@@ -81,7 +94,6 @@ router.post('/', (req, res, next) => {
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
   const { id } = req.params;
-
   // const { title, content } = req.body;
 
   // const updateNote = {};
@@ -96,6 +108,13 @@ router.put('/:id', (req, res, next) => {
 
   Note.findByIdAndUpdate(id, req.body, { new: true })
     .then(results => {
+      // has valid folderId
+      if (!mongoose.Types.ObjectId.isValid(results.folderId)) {
+        const err = new Error('The `id` is not valid');
+        err.status = 400;
+        return next(err);
+      }
+
       if (results) {
         res.json(results);
       } else {

@@ -18,7 +18,7 @@ chai.use(chaiHttp);
 
 // API tests
 
-describe.only('Folders API resource', function() {
+describe('Folders API resource', function() {
   //
   before(function() {
     return mongoose
