@@ -5,8 +5,9 @@ const mongoose = require('mongoose');
 const { MONGODB_URI } = require('../config');
 const Note = require('../models/note');
 const Folder = require('../models/folder');
+const Tag = require('../models/tag');
 
-const { notes, folders } = require('../db/seed/data');
+const { notes, folders, tags } = require('../db/seed/data');
 
 mongoose
   .connect(
@@ -18,7 +19,9 @@ mongoose
     return Promise.all([
       Note.insertMany(notes),
       Folder.insertMany(folders),
-      Folder.createIndexes()
+      Tag.insertMany(tags),
+      Folder.createIndexes(),
+      Tag.createIndexes()
     ]);
   })
   .then(() => mongoose.disconnect())
