@@ -197,7 +197,7 @@ describe('Folders API resource', function() {
     });
   });
   describe('DELETE endpoints', function() {
-    it('should delete a note by id', function() {
+    it('should delete a folder by id', function() {
       //create empty variable note to store our result in this scope
       let folder;
 
