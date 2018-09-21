@@ -27,15 +27,13 @@ describe('Notes API resource', function() {
       .then(() => mongoose.connection.db.dropDatabase());
   });
 
-  //FIXME:  Error: Timeout of 2000ms exceeded. For async tests and hooks
   beforeEach(function() {
     console.log('resetting test DB notes');
     return Promise.all([
       Note.insertMany(notes),
-      Folder.insertMany(folders)
-    ]).then(() => {
-      return Note.createIndexes();
-    });
+      Folder.insertMany(folders),
+      Folder.createIndexes()
+    ]);
   });
 
   afterEach(function() {
@@ -64,7 +62,7 @@ describe('Notes API resource', function() {
       });
 
       //EXAMPLE OF: Serial Request - Call API then call DB then compare
-      it.only('should return notes with right fields', function() {
+      it('should return notes with right fields', function() {
         //setting up empty variable resNote to hold results in this scope
         let resNote;
         //1. First, call the API
@@ -128,7 +126,6 @@ describe('Notes API resource', function() {
             expect(res.body.id).to.equal(data.id);
             expect(res.body.title).to.equal(data.title);
             expect(res.body.content).to.equal(data.content);
-            expect(res.body.folderId).to.equal(data.folderId);
             expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
             expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
           });
@@ -176,7 +173,6 @@ describe('Notes API resource', function() {
             expect(res.body.id).to.equal(noteData.id);
             expect(res.body.title).to.equal(noteData.title);
             expect(res.body.content).to.equal(noteData.content);
-            expect(res.body.folderId).to.equal(noteData.folderId);
             expect(new Date(res.body.createdAt)).to.eql(noteData.createdAt);
             expect(new Date(res.body.updatedAt)).to.eql(noteData.updatedAt);
           })
@@ -214,7 +210,6 @@ describe('Notes API resource', function() {
           .then(note => {
             expect(note.title).to.equal(updateData.title);
             expect(note.content).to.equal(updateData.content);
-            expect(note.folderId).to.equal(updateData.folderId);
           })
       );
     });
