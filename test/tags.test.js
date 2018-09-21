@@ -124,7 +124,7 @@ describe('Tags API resource', function() {
   describe('POST endpoints', function() {
     //EXAMPLE OF: Serial Request - Call API then call DB then compare
     it('should create and return a new item when provided valid data', function() {
-      //set up new note to test post with
+      //set up new tag to test post with
       const newTag = {
         name: 'The best tag ever!'
       };
