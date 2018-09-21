@@ -7,12 +7,6 @@ const folderSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true }
 });
 
-// folderSchema.pre('findByIdAndRemove', function(next) {
-//   Note.deleteMany({ folderId: this.id });
-//   console.log(this.id);
-//   next();
-// });
-
 // Add 'createdAt' and 'updatedAt' fields
 folderSchema.set('timestamps', true);
 

@@ -7,9 +7,9 @@ const mongoose = require('mongoose');
 const app = require('../server');
 const { TEST_MONGODB_URI } = require('../config');
 
-const Note = require('../models/note');
+const Folder = require('../models/folder');
 
-const { notes } = require('../db/seed/data');
+const { notes, folders } = require('../db/seed/data');
 
 // this makes the expect syntax available throughout
 // this module
@@ -18,7 +18,7 @@ chai.use(chaiHttp);
 
 // API tests
 
-describe('Notes API resource', function() {
+describe.only('Folders API resource', function() {
   //
   before(function() {
     return mongoose
@@ -27,8 +27,8 @@ describe('Notes API resource', function() {
   });
 
   beforeEach(function() {
-    console.log('resetting test DB notes');
-    return Note.insertMany(notes);
+    console.log('resetting test DB folders');
+    return Folder.insertMany(folders);
   });
 
   afterEach(function() {
@@ -41,11 +41,11 @@ describe('Notes API resource', function() {
   });
 
   describe('GET endpoints', function() {
-    describe('GET all - api/notes', function() {
+    describe('GET all - api/folders', function() {
       //EXAMPLE OF: Parallel Request - Call both DB and API, then compare
-      it('should return all notes', function() {
+      it('should return all folders', function() {
         return (
-          Promise.all([Note.find(), chai.request(app).get('/api/notes')])
+          Promise.all([Folder.find(), chai.request(app).get('/api/folders')])
             // 3. then compare database results to API response
             .then(([data, res]) => {
               expect(res).to.have.status(200);
@@ -57,52 +57,51 @@ describe('Notes API resource', function() {
       });
 
       //EXAMPLE OF: Serial Request - Call API then call DB then compare
-      it('should return notes with right fields', function() {
-        //setting up empty variable resNote to hold results in this scope
-        let resNote;
+      it('should return folders with right fields', function() {
+        //setting up empty variable resFolder to hold results in this scope
+        let resFolder;
         //1. First, call the API
         return (
           chai
             .request(app)
-            .get('/api/notes')
+            .get('/api/folders')
             .then(res => {
               expect(res).to.have.status(200);
               expect(res).to.be.json;
               expect(res.body).to.be.a('array');
               expect(res.body).to.have.a.lengthOf.at.least(1);
 
-              res.body.forEach(note => {
-                expect(note).to.be.a('object');
-                expect(note).to.include.keys('title', 'content');
+              res.body.forEach(folder => {
+                expect(folder).to.be.a('object');
+                expect(folder).to.include.keys('name');
               });
 
-              resNote = res.body[0];
+              resFolder = res.body[0];
               //2. then call the database to retrieve the new document
-              return Note.findById(resNote.id);
+              return Folder.findById(resFolder.id);
             })
             //3. then compare the API response to the database results
-            .then(note => {
-              expect(resNote.id).to.equal(note.id);
-              expect(resNote.title).to.equal(note.title);
-              expect(resNote.content).to.equal(note.content);
-              expect(new Date(resNote.createdAt)).to.eql(note.createdAt);
-              expect(new Date(resNote.updatedAt)).to.eql(note.createdAt);
+            .then(folder => {
+              expect(resFolder.id).to.equal(folder.id);
+              expect(resFolder.name).to.equal(folder.name);
+              expect(new Date(resFolder.createdAt)).to.eql(folder.createdAt);
+              expect(new Date(resFolder.updatedAt)).to.eql(folder.createdAt);
             })
         );
       });
     });
 
-    describe('GET by id - api/notes/:id', function() {
+    describe('GET by id - api/folders/:id', function() {
       //EXAMPLE OF: Serial Request - Call DB then call API then compare
-      it('should return correct note', function() {
+      it('should return correct folder', function() {
         //setting up empty variable data to hold results in this scope
         let data;
         //1. First, call the database
-        return Note.findOne()
+        return Folder.findOne()
           .then(result => {
             data = result;
             //2. Then call the API with the ID
-            return chai.request(app).get(`/api/notes/${data.id}`);
+            return chai.request(app).get(`/api/folders/${data.id}`);
           })
           .then(res => {
             expect(res).to.have.status(200);
@@ -111,15 +110,13 @@ describe('Notes API resource', function() {
             expect(res.body).to.be.an('object');
             expect(res.body).to.have.keys(
               'id',
-              'title',
-              'content',
+              'name',
               'createdAt',
               'updatedAt'
             );
             //3. Then compare database results to API response
             expect(res.body.id).to.equal(data.id);
-            expect(res.body.title).to.equal(data.title);
-            expect(res.body.content).to.equal(data.content);
+            expect(res.body.name).to.equal(data.name);
             expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
             expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
           });
@@ -130,9 +127,8 @@ describe('Notes API resource', function() {
     //EXAMPLE OF: Serial Request - Call API then call DB then compare
     it('should create and return a new item when provided valid data', function() {
       //set up new note to test post with
-      const newNote = {
-        title: 'The best article about cats ever!',
-        content: 'Lorem ipsum dolor sit amet, conseceture adipiscing elit'
+      const newFolder = {
+        name: 'The best folder ever!'
       };
 
       //create empty variable res to store our result in this scope
@@ -141,8 +137,8 @@ describe('Notes API resource', function() {
       return (
         chai
           .request(app)
-          .post('/api/notes')
-          .send(newNote)
+          .post('/api/folders')
+          .send(newFolder)
           //set the result we get back from sending newNote to see if it passes our expects
           .then(result => {
             res = result;
@@ -152,19 +148,17 @@ describe('Notes API resource', function() {
             expect(res.body).to.be.a('object');
             expect(res.body).to.have.keys(
               'id',
-              'title',
-              'content',
+              'name',
               'createdAt',
               'updatedAt'
             );
             //2. then call the database to retrieve the new document
-            return Note.findById(res.body.id);
+            return Folder.findById(res.body.id);
           })
           //3. then compare the API response to the database results
           .then(noteData => {
             expect(res.body.id).to.equal(noteData.id);
-            expect(res.body.title).to.equal(noteData.title);
-            expect(res.body.content).to.equal(noteData.content);
+            expect(res.body.name).to.equal(noteData.name);
             expect(new Date(res.body.createdAt)).to.eql(noteData.createdAt);
             expect(new Date(res.body.updatedAt)).to.eql(noteData.updatedAt);
           })
@@ -176,31 +170,28 @@ describe('Notes API resource', function() {
     it('should updated fields sent over', function() {
       //setting up test data to update with
       const updateData = {
-        title: 'My new note is so awesome',
-        content:
-          'This is some content for my new awesome note. Incredible right?'
+        name: 'My new Folder is so awesome'
       };
       //1. First, call the database
       return (
-        Note.findOne()
-          .then(note => {
+        Folder.findOne()
+          .then(folder => {
             //push the DB note id up into my updateData id
-            updateData.id = note.id;
+            updateData.id = folder.id;
 
             return chai
               .request(app)
-              .put(`/api/notes/${note.id}`)
+              .put(`/api/folders/${folder.id}`)
               .send(updateData);
           })
           .then(res => {
             expect(res).to.have.status(200);
             //2. Then call the API with the ID
-            return Note.findById(updateData.id);
+            return Folder.findById(updateData.id);
           })
           //3. Then compare database results to API response
-          .then(note => {
-            expect(note.title).to.equal(updateData.title);
-            expect(note.content).to.equal(updateData.content);
+          .then(folder => {
+            expect(folder.name).to.equal(updateData.name);
           })
       );
     });
@@ -208,19 +199,19 @@ describe('Notes API resource', function() {
   describe('DELETE endpoints', function() {
     it('should delete a note by id', function() {
       //create empty variable note to store our result in this scope
-      let note;
+      let folder;
 
       //find a note and pass it into response
       return (
-        Note.findOne()
-          .then(foundNote => {
+        Folder.findOne()
+          .then(foundFolder => {
             //set note variable to note object in response
-            note = foundNote;
-            return chai.request(app).delete(`/api/notes/${note.id}`);
+            folder = foundFolder;
+            return chai.request(app).delete(`/api/folders/${folder.id}`);
           })
           .then(response => {
             expect(response).to.have.status(204);
-            return Note.findById(note.id);
+            return Folder.findById(folder.id);
           })
           //look in DB and make sure the passed in note is gone.
           .then(response => {
