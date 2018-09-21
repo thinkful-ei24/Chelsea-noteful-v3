@@ -7,7 +7,7 @@ const router = express.Router();
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
-  const { folderId } = req.query;
+  const { folderId, tagId } = req.query;
   const searchTerm = req.query.searchTerm;
   let filter = {};
   let re = new RegExp(searchTerm, 'gi');
@@ -17,11 +17,17 @@ router.get('/', (req, res, next) => {
   }
 
   if (folderId) {
-    filter = { folderId: folderId };
+    // filter = { folderId: folderId };
+    filter.folderId = folderId;
+  }
+
+  if (tagId) {
+    filter.tags = tagId;
   }
 
   Note.find(filter)
-    .sort({ updatedAt: 'desc' })
+    .populate('tags')
+    .sort('-updatedAt')
     .then(results => {
       if (results) {
         res.json(results);
@@ -46,6 +52,7 @@ router.get('/:id', (req, res, next) => {
   }
 
   Note.findById(id)
+    .populate('tags')
     .then(results => {
       if (results) {
         res.json(results);
@@ -61,7 +68,7 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const { title, content, folderId } = req.body;
+  const { title, content, folderId, tags } = req.body;
 
   // has valid folderId
   if (!mongoose.Types.ObjectId.isValid(folderId)) {
@@ -70,10 +77,20 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
+  tags.forEach(tag => {
+    // has valid tag id
+    if (!mongoose.Types.ObjectId.isValid(tag)) {
+      const err = new Error('The `tag` is not valid');
+      err.status = 400;
+      return next(err);
+    }
+  });
+
   Note.create({
     title: title,
     content: content,
-    folderId: folderId
+    folderId: folderId,
+    tags: tags
   })
     .then(results => {
       if (results) {
