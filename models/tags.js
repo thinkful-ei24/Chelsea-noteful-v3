@@ -2,15 +2,15 @@
 
 const mongoose = require('mongoose');
 
-const folderSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true }
+const tagSchema = new mongoose.Schema({
+  name: { type: String, require: true, unique: true }
 });
 
 // Add 'createdAt' and 'updatedAt' fields
-folderSchema.set('timestamps', true);
+tagSchema.set('timestamps', true);
 
 //expose virtuals and remove _id and __v
-folderSchema.set('toObject', {
+tagSchema.set('toObject', {
   virtuals: true,
   transform: (doc, res) => {
     delete res._id;
@@ -18,4 +18,4 @@ folderSchema.set('toObject', {
   }
 });
 
-module.exports = mongoose.model('Folder', folderSchema);
+module.exports = mongoose.model('Tag', tagSchema);
