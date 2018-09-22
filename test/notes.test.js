@@ -98,6 +98,27 @@ describe('Notes API resource', function() {
             })
         );
       });
+
+      it('should return filtered result if searchTerm is valid', function() {
+        //set up query searchTerm variable
+        const query = 'lady gaga';
+        let re = new RegExp(query, 'gi');
+
+        //1. First, call the API
+        return chai
+          .request(app)
+          .get(`/api/notes?searchTerm=${query}`)
+          .then(res => {
+            return Note.find({ $or: [{ title: re }, { content: re }] });
+          })
+          .then(res => {
+            expect(res).to.be.a('array');
+            expect(res).to.have.lengthOf(1);
+          });
+
+        //2. then call the database to retrieve the new document
+        //3. then compare the API response to the database results
+      });
     });
 
     describe('GET by id - api/notes/:id', function() {
