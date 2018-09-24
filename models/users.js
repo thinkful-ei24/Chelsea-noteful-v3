@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   fullName: { type: String },
-  userName: { type: String, require: true, unique: true },
+  username: { type: String, require: true, unique: true },
   password: { type: String, require: true }
 });
 
@@ -17,5 +17,9 @@ userSchema.set('toObject', {
     delete res.password;
   }
 });
+
+userSchema.methods.validatePassword = function(password) {
+  return password === this.password;
+};
 
 module.exports = mongoose.model('User', userSchema);
