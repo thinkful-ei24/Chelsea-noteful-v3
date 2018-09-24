@@ -12,19 +12,26 @@ const router = express.Router();
 router.post('/', (req, res, next) => {
   const { fullName, username, password } = req.body;
 
-  User.create({ fullName, username, password })
+  return User.hashPassword(password)
+    .then(digest => {
+      const newUser = {
+        username,
+        password: digest,
+        fullName
+      };
+      return User.create(newUser);
+    })
     .then(result => {
-      if (result) {
-        const { id } = result;
-        res
-          .location(`/api/users/${id}`)
-          .status(201)
-          .json(result);
-      } else {
-        next();
-      }
+      return res
+        .status(201)
+        .location(`/api/users/${result.id}`)
+        .json(result);
     })
     .catch(err => {
+      if (err.code === 11000) {
+        err = new Error('The username already exists');
+        err.status = 400;
+      }
       next(err);
     });
 });
