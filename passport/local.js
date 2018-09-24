@@ -4,7 +4,7 @@ const express = require('express');
 const passport = require('passport');
 const { Strategy: LocalStrategy } = require('passport-local');
 
-const User = require('./models/users');
+const User = require('../models/users');
 
 const router = express.Router();
 
@@ -40,3 +40,5 @@ const localStrategy = new LocalStrategy((username, password, done) => {
       return done(err);
     });
 });
+
+module.exports = localStrategy;

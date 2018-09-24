@@ -10,9 +10,9 @@ const router = express.Router();
 /* ========== POST USER ========== */
 
 router.post('/', (req, res, next) => {
-  const { fullName, userName, password } = req.body;
+  const { fullName, username, password } = req.body;
 
-  User.create({ fullName, userName, password })
+  User.create({ fullName, username, password })
     .then(result => {
       if (result) {
         const { id } = result;
