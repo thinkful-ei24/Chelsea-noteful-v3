@@ -7,6 +7,9 @@ const folderSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 });
 
+//unique by user
+folderSchema.index({ name: 1, userId: 1 }, { unique: true });
+
 // Add 'createdAt' and 'updatedAt' fields
 folderSchema.set('timestamps', true);
 

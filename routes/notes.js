@@ -17,7 +17,9 @@ router.use(
 router.get('/', (req, res, next) => {
   const { folderId, tagId } = req.query;
   const searchTerm = req.query.searchTerm;
-  let filter = {};
+  const userId = req.user.id;
+
+  let filter = { userId: userId };
   let re = new RegExp(searchTerm, 'gi');
 
   if (searchTerm) {
@@ -52,6 +54,7 @@ router.get('/', (req, res, next) => {
 /* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/:id', (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -59,7 +62,7 @@ router.get('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Note.findById(id)
+  Note.findOne({ _id: id, userId })
     .populate('tags')
     .then(results => {
       if (results) {
@@ -77,6 +80,7 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   const { title, content, folderId, tags } = req.body;
+  const userId = req.user.id;
 
   // has valid folderId
   if (!mongoose.Types.ObjectId.isValid(folderId)) {
@@ -98,7 +102,8 @@ router.post('/', (req, res, next) => {
     title: title,
     content: content,
     folderId: folderId,
-    tags: tags
+    tags: tags,
+    userId: userId
   })
     .then(results => {
       if (results) {
@@ -119,6 +124,7 @@ router.post('/', (req, res, next) => {
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
   // const { title, content } = req.body;
 
   // const updateNote = {};
@@ -131,8 +137,15 @@ router.put('/:id', (req, res, next) => {
   //   updateNote.content = content;
   // }
 
-  Note.findByIdAndUpdate(id, req.body, { new: true })
+  Note.findOneAndUpdate({ _id: id, userId }, req.body, { new: true })
     .then(results => {
+      //no results
+      if (!results) {
+        const err = new Error('Not your note');
+        err.status = 404;
+        return next(err);
+      }
+
       // has valid folderId
       if (!mongoose.Types.ObjectId.isValid(results.folderId)) {
         const err = new Error('The `id` is not valid');
@@ -147,15 +160,16 @@ router.put('/:id', (req, res, next) => {
       }
     })
     .catch(err => {
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 });
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
   const { id } = req.params;
-  Note.findByIdAndRemove(id).then(res.status(204).end());
+  const userId = req.user.id;
+
+  Note.findOneAndRemove({ _id: id, userId }).then(res.status(204).end());
 });
 
 module.exports = router;

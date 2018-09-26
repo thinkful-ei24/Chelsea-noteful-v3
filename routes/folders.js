@@ -18,7 +18,9 @@ router.use(
 /* ========== GET/READ ALL FOLDERS ========== */
 
 router.get('/', (req, res, next) => {
-  Folder.find()
+  const userId = req.user.id;
+
+  Folder.find({ userId })
     .sort('name')
     .then(results => {
       if (results) {
@@ -37,6 +39,7 @@ router.get('/', (req, res, next) => {
 
 router.get('/:id', (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -44,7 +47,7 @@ router.get('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Folder.findById(id)
+  Folder.findOne({ _id: id, userId })
     .then(result => {
       if (result) {
         res.status(200).json(result);
@@ -62,6 +65,7 @@ router.get('/:id', (req, res, next) => {
 
 router.post('/', (req, res, next) => {
   const { name } = req.body;
+  const userId = req.user.id;
 
   //has name
   if (!name) {
@@ -70,7 +74,7 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  Folder.create({ name: name })
+  Folder.create({ name: name, userId })
     .then(result => {
       if (result) {
         const { id } = result;
@@ -103,6 +107,7 @@ router.post('/', (req, res, next) => {
 router.put('/:id', (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
+  const userId = req.user.id;
 
   //has name
   if (!name) {
@@ -118,7 +123,7 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Folder.findByIdAndUpdate(id, { name }, { new: true })
+  Folder.findOneAndUpdate({ _id: id, userId }, { name }, { new: true })
     .then(result => {
       if (result) {
         res.status(200).json(result);
@@ -140,6 +145,7 @@ router.put('/:id', (req, res, next) => {
 
 router.delete('/:id', (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   // has valid id
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -148,14 +154,14 @@ router.delete('/:id', (req, res, next) => {
     return next(err);
   }
 
-  const folderRemovePromise = Folder.findByIdAndRemove(id);
+  const folderRemovePromise = Folder.findOneAndRemove({ _id: id, userId });
 
   // this promise deletes all appropriate notes
   //const noteRemovePromise = Note.deleteMany({ folderId: id });
 
   //this promise removes the folderId from note but keeps the note
   const noteRemovePromise = Note.updateMany(
-    { folderId: id },
+    { folderId: id, userId },
     { $unset: { folderId: '' } }
   );
 

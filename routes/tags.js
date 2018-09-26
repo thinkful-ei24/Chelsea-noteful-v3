@@ -15,9 +15,11 @@ router.use(
   passport.authenticate('jwt', { session: false, failWithError: true })
 );
 
-/* ========== GET/READ ALL FOLDERS ========== */
+/* ========== GET/READ ALL TAGS ========== */
 router.get('/', (req, res, next) => {
-  Tag.find()
+  const userId = req.user.id;
+
+  Tag.find({ userId })
     .sort('name')
     .then(results => {
       if (results) {
@@ -32,9 +34,10 @@ router.get('/', (req, res, next) => {
     });
 });
 
-/* ========== GET/READ A SINGLE FOLDER ========== */
+/* ========== GET/READ A SINGLE TAG ========== */
 router.get('/:id', (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -42,7 +45,7 @@ router.get('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Tag.findById(id)
+  Tag.findOne({ _id: id, userId })
     .then(result => {
       if (result) {
         res.status(200).json(result);
@@ -56,9 +59,10 @@ router.get('/:id', (req, res, next) => {
     });
 });
 
-/* ========== POST/CREATE A FOLDER ========== */
+/* ========== POST/CREATE A TAG ========== */
 router.post('/', (req, res, next) => {
   const { name } = req.body;
+  const userId = req.user.id;
 
   //has name
   if (!name) {
@@ -67,7 +71,7 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  Tag.create({ name: name })
+  Tag.create({ name: name, userId })
     .then(result => {
       if (result) {
         const { id } = result;
@@ -97,10 +101,11 @@ router.post('/', (req, res, next) => {
     });
 });
 
-/* ========== PUT/UPDATE A SINGLE FOLDER ========== */
+/* ========== PUT/UPDATE A SINGLE TAG ========== */
 router.put('/:id', (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
+  const userId = req.user.id;
 
   //has name
   if (!name) {
@@ -116,7 +121,7 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Tag.findByIdAndUpdate(id, { name }, { new: true })
+  Tag.findOneAndUpdate({ _id: id, userId }, { name }, { new: true })
     .then(result => {
       if (result) {
         res.status(200).json(result);
@@ -134,9 +139,10 @@ router.put('/:id', (req, res, next) => {
     });
 });
 
-/* ========== DELETE/REMOVE A SINGLE FOLDER ========== */
+/* ========== DELETE/REMOVE A SINGLE TAG ========== */
 router.delete('/:id', (req, res, next) => {
   const { id } = req.params;
+  const userId = req.user.id;
 
   // has valid id
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -145,9 +151,9 @@ router.delete('/:id', (req, res, next) => {
     return next(err);
   }
 
-  const tagRemovePromise = Tag.findByIdAndRemove(id);
+  const tagRemovePromise = Tag.findOneAndRemove({ _id: id, userId });
   const noteRemovePromise = Note.updateMany(
-    { tags: id },
+    { tags: id, userId },
     { $pull: { tags: id } }
   );
 

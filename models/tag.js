@@ -7,6 +7,9 @@ const tagSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 });
 
+//unique by user
+tagSchema.index({ name: 1, userId: 1 }, { unique: true });
+
 // Add 'createdAt' and 'updatedAt' fields
 tagSchema.set('timestamps', true);
 
