@@ -4,6 +4,8 @@ const express = require('express');
 const passport = require('passport');
 
 const Note = require('../models/note');
+const Folder = require('../models/folder');
+const Tag = require('../models/tag');
 
 const router = express.Router();
 
@@ -82,21 +84,48 @@ router.post('/', (req, res, next) => {
   const { title, content, folderId, tags } = req.body;
   const userId = req.user.id;
 
-  // has valid folderId
-  if (!mongoose.Types.ObjectId.isValid(folderId)) {
-    const err = new Error('The `id` is not valid');
-    err.status = 400;
-    return next(err);
-  }
-
-  tags.forEach(tag => {
-    // has valid tag id
-    if (!mongoose.Types.ObjectId.isValid(tag)) {
-      const err = new Error('The `tag` is not valid');
+  //validate folderId and tags belong to current user
+  if (folderId) {
+    // has valid folderId
+    if (!mongoose.Types.ObjectId.isValid(folderId)) {
+      const err = new Error('The `id` is not valid');
       err.status = 400;
       return next(err);
     }
-  });
+
+    Folder.findOne({ _id: folderId, userId }).then(result => {
+      if (!result) {
+        const err = new Error('You can not change another users info');
+        err.status = 400;
+        return next(err);
+      }
+    });
+  }
+
+  if (tags) {
+    if (!Array.isArray(tags)) {
+      const err = new Error('The tags property must be an array');
+      err.status = 400;
+      return next(err);
+    }
+
+    tags.forEach(tag => {
+      // has valid tag id
+      if (!mongoose.Types.ObjectId.isValid(tag)) {
+        const err = new Error('The `tag` is not valid');
+        err.status = 400;
+        return next(err);
+      }
+
+      Tag.findOne({ _id: tag, userId }).then(result => {
+        if (!result) {
+          const err = new Error('The tags array contains an invalid id');
+          err.status = 400;
+          return next(err);
+        }
+      });
+    });
+  }
 
   Note.create({
     title: title,
@@ -116,8 +145,9 @@ router.post('/', (req, res, next) => {
       }
     })
     .catch(err => {
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
+      // console.error(`ERROR: ${err.message}`);
+      // console.error(err);
     });
 });
 
