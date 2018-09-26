@@ -18,6 +18,8 @@ router.post('/', (req, res, next) => {
   if (missingField) {
     const err = new Error(`Missing ${missingField}!`);
     err.status = 422;
+    err.reason = 'ValidationError';
+    err.message = 'Missing field';
     return next(err);
   }
 
@@ -30,6 +32,8 @@ router.post('/', (req, res, next) => {
   if (nonStringField) {
     const err = new Error('Incorrect field type: expected string');
     err.status = 422;
+    err.reason = 'ValidationError';
+    err.message = 'Incorrect field type: expected string';
     return next(err);
   }
 
@@ -42,6 +46,8 @@ router.post('/', (req, res, next) => {
   if (nonTrimmedField) {
     const err = new Error('Cannot start or end with whitespace');
     err.status = 422;
+    err.reason = 'ValidationError';
+    err.message = 'Cannot start or end with whitespace';
     return next(err);
   }
 
@@ -73,6 +79,10 @@ router.post('/', (req, res, next) => {
     const err = new Error(
       `Must be at least ${sizedFields[tooSmallField].min} characters long`
     );
+    err.reason = 'ValidationError';
+    err.message = `Must be at least ${
+      sizedFields[tooSmallField].min
+    } characters long`;
     err.status = 422;
     return next(err);
   }
@@ -81,6 +91,10 @@ router.post('/', (req, res, next) => {
     const err = new Error(
       `Must be at most ${sizedFields[tooLargeField].max} characters long`
     );
+    err.reason = 'ValidationError';
+    err.message = `Must be at most ${
+      sizedFields[tooLargeField].max
+    } characters long`;
     err.status = 422;
     return next(err);
   }
@@ -92,7 +106,7 @@ router.post('/', (req, res, next) => {
       const newUser = {
         username,
         password: digest,
-        fullName
+        fullName: fullName.trim()
       };
       return User.create(newUser);
     })
