@@ -3,13 +3,16 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
+const { JWT_SECRET } = require('../config');
 const app = require('../server');
 const { TEST_MONGODB_URI } = require('../config');
 
 const Folder = require('../models/folder');
+const User = require('../models/users');
 
-const { notes, folders } = require('../db/seed/data');
+const { users, folders } = require('../db/seed/data');
 
 // this makes the expect syntax available throughout
 // this module
@@ -19,7 +22,11 @@ chai.use(chaiHttp);
 // API tests
 
 describe('Folders API resource', function() {
-  //
+  // Define a token and user so it is accessible in the tests
+  let token;
+  let user;
+
+  //hooks
   before(function() {
     return mongoose
       .connect(TEST_MONGODB_URI)
@@ -28,7 +35,14 @@ describe('Folders API resource', function() {
 
   beforeEach(function() {
     console.log('resetting test DB folders');
-    return Folder.insertMany(folders);
+    return Promise.all([
+      User.insertMany(users),
+      Folder.insertMany(folders),
+      Folder.createIndexes()
+    ]).then(([users]) => {
+      user = users[0];
+      token = jwt.sign({ user }, JWT_SECRET, { subject: user.username });
+    });
   });
 
   afterEach(function() {

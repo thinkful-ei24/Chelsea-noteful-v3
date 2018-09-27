@@ -214,7 +214,11 @@ describe.only('Noteful API - Users', function() {
             });
         });
       });
+<<<<<<< HEAD
       it.only('Should trim fullName', function() {
+=======
+      it('Should trim fullName', function() {
+>>>>>>> folders.test and Create a JWT in beforeEach
         const testUser = {
           username,
           password,
