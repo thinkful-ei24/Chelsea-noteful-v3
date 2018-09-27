@@ -13,7 +13,7 @@ const expect = chai.expect;
 
 chai.use(chaiHttp);
 
-describe.only('Noteful API - Users', function() {
+describe('Noteful API - Users', function() {
   const username = 'exampleUser';
   const password = 'examplePass';
   const fullName = 'Example User';
@@ -214,11 +214,7 @@ describe.only('Noteful API - Users', function() {
             });
         });
       });
-<<<<<<< HEAD
-      it.only('Should trim fullName', function() {
-=======
       it('Should trim fullName', function() {
->>>>>>> folders.test and Create a JWT in beforeEach
         const testUser = {
           username,
           password,

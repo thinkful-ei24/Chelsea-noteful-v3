@@ -59,7 +59,13 @@ describe('Folders API resource', function() {
       //EXAMPLE OF: Parallel Request - Call both DB and API, then compare
       it('should return all folders', function() {
         return (
-          Promise.all([Folder.find(), chai.request(app).get('/api/folders')])
+          Promise.all([
+            Folder.find({ userId: user.id }),
+            chai
+              .request(app)
+              .get('/api/folders')
+              .set('Authorization', `Bearer ${token}`)
+          ])
             // 3. then compare database results to API response
             .then(([data, res]) => {
               expect(res).to.have.status(200);
@@ -79,6 +85,7 @@ describe('Folders API resource', function() {
           chai
             .request(app)
             .get('/api/folders')
+            .set('Authorization', `Bearer ${token}`)
             .then(res => {
               expect(res).to.have.status(200);
               expect(res).to.be.json;
@@ -87,7 +94,13 @@ describe('Folders API resource', function() {
 
               res.body.forEach(folder => {
                 expect(folder).to.be.a('object');
-                expect(folder).to.include.keys('name');
+                expect(folder).to.include.keys(
+                  'id',
+                  'name',
+                  'userId',
+                  'createdAt',
+                  'updatedAt'
+                );
               });
 
               resFolder = res.body[0];
@@ -115,7 +128,10 @@ describe('Folders API resource', function() {
           .then(result => {
             data = result;
             //2. Then call the API with the ID
-            return chai.request(app).get(`/api/folders/${data.id}`);
+            return chai
+              .request(app)
+              .get(`/api/folders/${data.id}`)
+              .set('Authorization', `Bearer ${token}`);
           })
           .then(res => {
             expect(res).to.have.status(200);
@@ -126,7 +142,8 @@ describe('Folders API resource', function() {
               'id',
               'name',
               'createdAt',
-              'updatedAt'
+              'updatedAt',
+              'userId'
             );
             //3. Then compare database results to API response
             expect(res.body.id).to.equal(data.id);
@@ -152,6 +169,7 @@ describe('Folders API resource', function() {
         chai
           .request(app)
           .post('/api/folders')
+          .set('Authorization', `Bearer ${token}`)
           .send(newFolder)
           //set the result we get back from sending newNote to see if it passes our expects
           .then(result => {
@@ -164,7 +182,8 @@ describe('Folders API resource', function() {
               'id',
               'name',
               'createdAt',
-              'updatedAt'
+              'updatedAt',
+              'userId'
             );
             //2. then call the database to retrieve the new document
             return Folder.findById(res.body.id);
@@ -196,6 +215,7 @@ describe('Folders API resource', function() {
             return chai
               .request(app)
               .put(`/api/folders/${folder.id}`)
+              .set('Authorization', `Bearer ${token}`)
               .send(updateData);
           })
           .then(res => {
@@ -221,7 +241,10 @@ describe('Folders API resource', function() {
           .then(foundFolder => {
             //set note variable to note object in response
             folder = foundFolder;
-            return chai.request(app).delete(`/api/folders/${folder.id}`);
+            return chai
+              .request(app)
+              .delete(`/api/folders/${folder.id}`)
+              .set('Authorization', `Bearer ${token}`);
           })
           .then(response => {
             expect(response).to.have.status(204);

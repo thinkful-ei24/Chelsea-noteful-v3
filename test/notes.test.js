@@ -3,7 +3,9 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
+const { JWT_SECRET } = require('../config');
 const app = require('../server');
 const { TEST_MONGODB_URI } = require('../config');
 
@@ -21,7 +23,11 @@ chai.use(chaiHttp);
 // API tests
 
 describe('Notes API resource', function() {
-  //
+  // Define a token and user so it is accessible in the tests
+  let token;
+  let user;
+
+  //hooks
   before(function() {
     return mongoose
       .connect(TEST_MONGODB_URI)
@@ -36,7 +42,10 @@ describe('Notes API resource', function() {
       Tag.insertMany(tags),
       Folder.createIndexes(),
       Tag.createIndexes()
-    ]);
+    ]).then(([users]) => {
+      user = users[0];
+      token = jwt.sign({ user }, JWT_SECRET, { subject: user.username });
+    });
   });
 
   afterEach(function() {
