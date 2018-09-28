@@ -130,8 +130,8 @@ router.post('/', (req, res, next) => {
   Note.create({
     title: title,
     content: content,
-    folderId: folderId,
-    tags: tags,
+    folderId: folderId ? folderId : null,
+    tags: tags ? tags : [],
     userId: userId
   })
     .then(results => {
