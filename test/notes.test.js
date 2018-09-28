@@ -12,8 +12,9 @@ const { TEST_MONGODB_URI } = require('../config');
 const Note = require('../models/note');
 const Folder = require('../models/folder');
 const Tag = require('../models/tag');
+const User = require('../models/users');
 
-const { folders, tags, notes } = require('../db/seed/data');
+const { folders, tags, notes, users } = require('../db/seed/data');
 
 // this makes the expect syntax available throughout
 // this module
@@ -37,11 +38,13 @@ describe('Notes API resource', function() {
   beforeEach(function() {
     console.log('resetting test DB notes');
     return Promise.all([
+      User.insertMany(users),
       Note.insertMany(notes),
       Folder.insertMany(folders),
       Tag.insertMany(tags),
       Folder.createIndexes(),
-      Tag.createIndexes()
+      Tag.createIndexes(),
+      User.createIndexes()
     ]).then(([users]) => {
       user = users[0];
       token = jwt.sign({ user }, JWT_SECRET, { subject: user.username });
@@ -62,7 +65,13 @@ describe('Notes API resource', function() {
       //EXAMPLE OF: Parallel Request - Call both DB and API, then compare
       it('should return all notes', function() {
         return (
-          Promise.all([Note.find(), chai.request(app).get('/api/notes')])
+          Promise.all([
+            Note.find({ userId: user.id }),
+            chai
+              .request(app)
+              .get('/api/notes')
+              .set('Authorization', `Bearer ${token}`)
+          ])
             // 3. then compare database results to API response
             .then(([data, res]) => {
               expect(res).to.have.status(200);
@@ -82,6 +91,7 @@ describe('Notes API resource', function() {
           chai
             .request(app)
             .get('/api/notes')
+            .set('Authorization', `Bearer ${token}`)
             .then(res => {
               expect(res).to.have.status(200);
               expect(res).to.be.json;
@@ -117,6 +127,7 @@ describe('Notes API resource', function() {
         return chai
           .request(app)
           .get(`/api/notes?searchTerm=${query}`)
+          .set('Authorization', `Bearer ${token}`)
           .then(res => {
             return Note.find({ $or: [{ title: re }, { content: re }] });
           })
@@ -140,7 +151,10 @@ describe('Notes API resource', function() {
           .then(result => {
             data = result;
             //2. Then call the API with the ID
-            return chai.request(app).get(`/api/notes/${data.id}`);
+            return chai
+              .request(app)
+              .get(`/api/notes/${data.id}`)
+              .set('Authorization', `Bearer ${token}`);
           })
           .then(res => {
             expect(res).to.have.status(200);
@@ -154,7 +168,8 @@ describe('Notes API resource', function() {
               'folderId',
               'tags',
               'createdAt',
-              'updatedAt'
+              'updatedAt',
+              'userId'
             );
             //3. Then compare database results to API response
             expect(res.body.id).to.equal(data.id);
@@ -166,6 +181,7 @@ describe('Notes API resource', function() {
       });
     });
   });
+
   describe('POST endpoints', function() {
     //EXAMPLE OF: Serial Request - Call API then call DB then compare
     it('should create and return a new item when provided valid data', function() {
@@ -173,8 +189,8 @@ describe('Notes API resource', function() {
       const newNote = {
         title: 'The best article about cats ever!',
         content: 'Lorem ipsum dolor sit amet, conseceture adipiscing elit',
-        folderId: '111111111111111111111102',
-        tags: ['222222222222222222222200', '222222222222222222222201']
+        folderId: '222222222222222222222201',
+        tags: ['333333333333333333333301', '333333333333333333333303']
       };
 
       //create empty variable res to store our result in this scope
@@ -184,6 +200,7 @@ describe('Notes API resource', function() {
         chai
           .request(app)
           .post('/api/notes')
+          .set('Authorization', `Bearer ${token}`)
           .send(newNote)
           //set the result we get back from sending newNote to see if it passes our expects
           .then(result => {
@@ -199,7 +216,8 @@ describe('Notes API resource', function() {
               'folderId',
               'tags',
               'createdAt',
-              'updatedAt'
+              'updatedAt',
+              'userId'
             );
             //2. then call the database to retrieve the new document
             return Note.findById(res.body.id);
@@ -215,6 +233,7 @@ describe('Notes API resource', function() {
       );
     });
   });
+
   describe('PUT endpoints', function() {
     //EXAMPLE OF: Serial Request - Call DB then call API then compare
     it('should updated fields sent over', function() {
@@ -223,7 +242,7 @@ describe('Notes API resource', function() {
         title: 'My new note is so awesome',
         content:
           'This is some content for my new awesome note. Incredible right?',
-        folderId: '111111111111111111111102'
+        folderId: '222222222222222222222209'
       };
       //1. First, call the database
       return (
@@ -235,6 +254,7 @@ describe('Notes API resource', function() {
             return chai
               .request(app)
               .put(`/api/notes/${note.id}`)
+              .set('Authorization', `Bearer ${token}`)
               .send(updateData);
           })
           .then(res => {
@@ -261,7 +281,10 @@ describe('Notes API resource', function() {
           .then(foundNote => {
             //set note variable to note object in response
             note = foundNote;
-            return chai.request(app).delete(`/api/notes/${note.id}`);
+            return chai
+              .request(app)
+              .delete(`/api/notes/${note.id}`)
+              .set('Authorization', `Bearer ${token}`);
           })
           .then(response => {
             expect(response).to.have.status(204);
