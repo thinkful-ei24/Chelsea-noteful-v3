@@ -3,13 +3,16 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
+const { JWT_SECRET } = require('../config');
 const app = require('../server');
 const { TEST_MONGODB_URI } = require('../config');
 
 const Tag = require('../models/tag');
+const User = require('../models/users');
 
-const { tags } = require('../db/seed/data');
+const { users, tags } = require('../db/seed/data');
 
 // this makes the expect syntax available throughout
 // this module
@@ -18,6 +21,11 @@ chai.use(chaiHttp);
 
 // API tests
 describe('Tags API resource', function() {
+  // Define a token and user so it is accessible in the tests
+  let token;
+  let user;
+
+  //hooks
   before(function() {
     return mongoose
       .connect(TEST_MONGODB_URI)
@@ -26,12 +34,18 @@ describe('Tags API resource', function() {
 
   beforeEach(function() {
     console.log('resetting test DB folders');
-    return Tag.insertMany(tags);
+    return Promise.all([User.insertMany(users), Tag.insertMany(tags)]).then(
+      ([users]) => {
+        user = users[0];
+        token = jwt.sign({ user }, JWT_SECRET, { subject: user.username });
+      }
+    );
   });
 
   afterEach(function() {
     console.log('dropping DB');
-    return mongoose.connection.db.dropDatabase();
+    //return mongoose.connection.db.dropDatabase();
+    return Promise.all([User.deleteMany(), Tag.deleteMany()]);
   });
 
   after(function() {
@@ -43,7 +57,13 @@ describe('Tags API resource', function() {
       //EXAMPLE OF: Parallel Request - Call both DB and API, then compare
       it('should return all tags', function() {
         return (
-          Promise.all([Tag.find(), chai.request(app).get('/api/tags')])
+          Promise.all([
+            Tag.find({ userId: user.id }),
+            chai
+              .request(app)
+              .get('/api/tags')
+              .set('Authorization', `Bearer ${token}`)
+          ])
             // 3. then compare database results to API response
             .then(([data, res]) => {
               expect(res).to.have.status(200);
@@ -63,6 +83,7 @@ describe('Tags API resource', function() {
           chai
             .request(app)
             .get('/api/tags')
+            .set('Authorization', `Bearer ${token}`)
             .then(res => {
               expect(res).to.have.status(200);
               expect(res).to.be.json;
@@ -99,7 +120,10 @@ describe('Tags API resource', function() {
           .then(result => {
             data = result;
             //2. Then call the API with the ID
-            return chai.request(app).get(`/api/tags/${data.id}`);
+            return chai
+              .request(app)
+              .get(`/api/tags/${data.id}`)
+              .set('Authorization', `Bearer ${token}`);
           })
           .then(res => {
             expect(res).to.have.status(200);
@@ -110,7 +134,8 @@ describe('Tags API resource', function() {
               'id',
               'name',
               'createdAt',
-              'updatedAt'
+              'updatedAt',
+              'userId'
             );
             //3. Then compare database results to API response
             expect(res.body.id).to.equal(data.id);
@@ -136,6 +161,7 @@ describe('Tags API resource', function() {
         chai
           .request(app)
           .post('/api/tags')
+          .set('Authorization', `Bearer ${token}`)
           .send(newTag)
           //set the result we get back from sending newNote to see if it passes our expects
           .then(result => {
@@ -148,7 +174,8 @@ describe('Tags API resource', function() {
               'id',
               'name',
               'createdAt',
-              'updatedAt'
+              'updatedAt',
+              'userId'
             );
             //2. then call the database to retrieve the new document
             return Tag.findById(res.body.id);
@@ -172,7 +199,7 @@ describe('Tags API resource', function() {
       };
       //1. First, call the database
       return (
-        Tag.findOne()
+        Tag.findOne({ userId: user.id })
           .then(tag => {
             //push the DB note id up into my updateData id
             updateData.id = tag.id;
@@ -180,6 +207,7 @@ describe('Tags API resource', function() {
             return chai
               .request(app)
               .put(`/api/tags/${tag.id}`)
+              .set('Authorization', `Bearer ${token}`)
               .send(updateData);
           })
           .then(res => {
@@ -202,11 +230,14 @@ describe('Tags API resource', function() {
 
       //find a note and pass it into response
       return (
-        Tag.findOne()
+        Tag.findOne({ userId: user.id })
           .then(foundTag => {
             //set note variable to note object in response
             tag = foundTag;
-            return chai.request(app).delete(`/api/tags/${tag.id}`);
+            return chai
+              .request(app)
+              .delete(`/api/tags/${tag.id}`)
+              .set('Authorization', `Bearer ${token}`);
           })
           .then(response => {
             expect(response).to.have.status(204);
